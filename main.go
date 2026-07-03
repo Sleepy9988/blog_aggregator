@@ -2,12 +2,17 @@ package main
 
 import (
 	"blog_aggregator/internal/config"
+	"blog_aggregator/internal/database"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -17,9 +22,15 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	fmt.Printf("Read config: %+v\n", cfg)
+	db, err := sql.Open("postgres", cfg.DBURL)
+	if err != nil {
+		log.Fatalf("error connecting to db: %v", err)
+	}
+	defer db.Close()
+	dbQueries := database.New(db)
 
 	programState := &state{
+		db:  dbQueries,
 		cfg: &cfg,
 	}
 
@@ -28,6 +39,9 @@ func main() {
 	}
 
 	commands.register("login", handlerLogin)
+	commands.register("register", handlerRegister)
+	commands.register("reset", handlerReset)
+	commands.register("users", handlerListUsers)
 
 	args := os.Args
 	if len(args) < 2 {
