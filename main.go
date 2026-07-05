@@ -4,7 +4,6 @@ import (
 	"blog_aggregator/internal/config"
 	"blog_aggregator/internal/database"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
@@ -44,6 +43,7 @@ func main() {
 	commands.register("users", handlerListUsers)
 	commands.register("agg", handlerAggregator)
 	commands.register("addfeed", handlerFeed)
+	commands.register("feeds", handlerListFeeds)
 
 	args := os.Args
 	if len(args) < 2 {
@@ -70,6 +70,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config again: %+v\n", cfg)
+	//fmt.Printf("Read config again: %+v\n", cfg)
 
 }
