@@ -93,12 +93,12 @@ func handlerFollowFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <feed_url>", cmd.Name)
 	}
-/*
-	current_user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
-*/
+	/*
+		current_user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+		if err != nil {
+			return err
+		}
+	*/
 	url := cmd.Args[0]
 	feed_url, err := s.db.GetFeedByURL(context.Background(), url)
 	if err != nil {
@@ -129,7 +129,7 @@ func handlerFeedFollowing(s *state, cmd command, user database.User) error {
 	if err != nil {
 		return err
 	}
-		*/
+	*/
 
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
@@ -151,4 +151,29 @@ func handlerFeedFollowing(s *state, cmd command, user database.User) error {
 func printFeedFollow(username, feedname string) {
 	fmt.Printf("* User:		%s\n", username)
 	fmt.Printf("* Feed:		%s\n", feedname)
+}
+
+func handlerUnfollowFeed(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <feed_url>", cmd.Name)
+	}
+
+	feed_url := cmd.Args[0]
+	feed, err := s.db.GetFeedByURL(context.Background(), feed_url)
+	if err != nil {
+		return fmt.Errorf("couldn't get feed: %w", err)
+	}
+
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("couldn#t delete feed follow: %w", err)
+	}
+
+	fmt.Printf("%s unfollowed successfully!\n", feed.Name)
+	return nil
+
 }

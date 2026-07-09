@@ -1,7 +1,6 @@
-package main 
+package main
 
 import (
-	"fmt"
 	"blog_aggregator/internal/database"
 	"context"
 )
