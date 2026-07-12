@@ -3,9 +3,13 @@ package main
 import (
 	"blog_aggregator/internal/database"
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func handlerAggregator(s *state, cmd command) error {
@@ -50,12 +54,43 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 
 	feedData, err := fetchFeed(context.Background(), feed.Url)
 	if err != nil {
-		log.Printf("Could not collect  feed %w", err)
+		log.Printf("Could not collect  feed %s", err)
 		return
 	}
 
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		publishedAt := sql.NullTime{}
+
+		if parseTime, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  parseTime,
+				Valid: true,
+			}
+		}
+
+		_, err := db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: sql.NullTime{
+				Time:  time.Now().UTC(),
+				Valid: true,
+			},
+			FeedID: feed.ID,
+			Title:  item.Title,
+			Url:    item.Link,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			PublishedAt: publishedAt,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "dupicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Could not create post: %v", err)
+			continue
+		}
 	}
 
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
